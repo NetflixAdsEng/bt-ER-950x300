@@ -43,10 +43,26 @@ export class Animation {
       });
 
       TweenLite.delayedCall(ribbonStart, () => {
-        View.ribbon.play();
+        if (adData.useRibbon) {
+          View.ribbon.play();
+          return;
+        }
+        Animation.playIntro();
+        TweenLite.to(
+          View.endFrame.subLayer,
+          Creative.zoomFadeOut || RIBBON_ANIM_TIME,
+          {
+            opacity: 0,
+            onComplete: Animation.hideEndFrame
+          }
+        );
       });
     } else {
-      View.ribbon.play();
+      if (adData.useRibbon) {
+        View.ribbon.play();
+        return;
+      }
+      Animation.playIntro();
     }
   }
 
@@ -80,8 +96,13 @@ export class Animation {
     }
   }
 
+  static hideEndFrame() {
+    TweenLite.set(View.endFrame.subLayer, { opacity: 0, visibility: "hidden" });
+  }
+
   static showEndFrame() {
     console.log("Animation.showEndFrame()");
+    adData.onEndframe = true;
     if (adData.useSupercut) {
       // reset endframe after ribbon and supercut
       View.endFrame.netflixLogo.progress(0);
@@ -92,6 +113,15 @@ export class Animation {
     }
 
     if (View.intro) View.intro.hide();
+
+    // for C2.0 Builder ads
+    if (View.endFrame.subLayer) {
+      TweenLite.set(View.endFrame.subLayer, {
+        opacity: 1,
+        visibility: "visible"
+      });
+    }
+
     View.endFrame.show();
 
     const creative = new Creative();
@@ -99,7 +129,7 @@ export class Animation {
       creative.init();
     }
 
-    if (adData.useSupercut) {
+    if (!adData.useRibbon || adData.useSupercut) {
       creative.play();
     }
   }
